@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "stm32"
+version = "0.1.0"
+description = "Embedding system based on stm32"
+authors = ["Bremner"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

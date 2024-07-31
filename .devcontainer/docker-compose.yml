@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  app:
+    build: 
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ~/.ssh:/opt/hardware_engineer/.ssh
+      - ..:/opt/hardware_engineer/code
+    command: ["tail -f /dev/null"]
+    ports:
+      - 8123:8000
+    depends_on:
+      - db
+      - minio
+    # networks:
+    #   - microservices-for-xxx
+  
+  minio:
+    image: minio/minio
+    ports:
+      - 9002:9000
+      - 9003:9001
+    environment:
+      MINIO_ACCESS_KEY: minio_access_key
+      MINIO_SECRET_KEY: minio_secret_key
+    command: server /data --console-address ":9001"
+    # networks:
+    #   - microservices-for-xxx
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=db
+    # networks:
+    #   - microservices-for-xxx
+
+# networks:
+#   microservices-for-xxx:
+#     external: true
+
+

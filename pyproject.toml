@@ -7,7 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+grpcio = "^1.65.2"
+grpcio-tools = "^1.65.2"
+pydantic = "^2.8.2"
+numpy = "^2.0.1"
+openai = "^1.37.1"
+pydantic-settings = "^2.4.0"
+weaviate-client = "^4.7.1"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
 
 [build-system]
 requires = ["poetry-core"]

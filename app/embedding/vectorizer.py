@@ -46,4 +46,4 @@ if __name__ == "__main__":
     res = vectorizer.vectorize(["Hello, world!", "Goodbye, world!"])
     import numpy as np
 
-    print(vectorizer.dimension)
+    print(res)

@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package embeddingservice;
+
+
+message Chunk2VdbRequest {
+  string context_name = 1;
+  string chunk_name = 2; 
+  string text = 3;
+}
+
+message Chunk2VdbResponse {
+ bool reponse = 1; 
+}
+
+message TextEmbeddingRequest {
+    string text=1;
+}
+
+message TextEmbeddingResponse {
+    repeated float vector = 1; 
+    Metadata metadata=2;
+}
+
+message Metadata {
+  int32 dim1 = 1; // First dimension of the embedding vector.
+  int32 dim2 = 2; // Second dimension of the embedding vector.
+}
+
+service EmbeddingService {
+  rpc Chunk2Vdb (Chunk2VdbRequest) returns (Chunk2VdbResponse);
+  rpc TextEmbedding (TextEmbeddingRequest) returns (TextEmbeddingResponse);
+}

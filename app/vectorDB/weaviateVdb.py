@@ -56,9 +56,20 @@ def insert_data(context_name, chunk_name, text):
 
 
 if __name__ == "__main__":
-    context_name = "A delicious Riesling"
-    chunk_name = "This wine is a delicious Riesling which pairs well with seafood."
-    text = "Germany"
+    # context_name = "A delicious Riesling"
+    # chunk_name = "This wine is a delicious Riesling which pairs well with seafood."
+    # text = "Germany"
 
-    uuid = insert_data(context_name, chunk_name, text)
-    print(uuid)
+    # uuid = insert_data(context_name, chunk_name, text)
+    # print(uuid)
+    
+    client=weaviate.connect_to_local("weaviate")
+    ChunkEmbedding = client.collections.get("ChunkEmbedding")
+
+    for item in ChunkEmbedding.iterator(
+        include_vector=True  # If using named vectors, you can specify ones to include e.g. ['title', 'body'], or True to include all
+    ):
+        print(item.properties)
+        print(item.vector)
+
+    client.close()

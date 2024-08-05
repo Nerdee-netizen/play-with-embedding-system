@@ -1,12 +1,12 @@
 from typing import Iterable, List, Union
 import numpy as np
 from openai import Client
+from abc import ABC, abstractmethod
 
 
-class Vectorizer:
-    def __init__(self):
-        pass
+class Vectorizer(ABC):
 
+    @abstractmethod
     def vectorize(self, text: str):
         pass
 

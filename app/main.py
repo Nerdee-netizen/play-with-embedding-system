@@ -1,12 +1,30 @@
-from app.vectorDB.weaviateVdb import WeaviateVdb_Insert
+from app.vectorDB.weaviateVdb import WeaviateVdbInsert
 from app.embedding.vectorizer import OpenAIVectorizer
 from app.utils.config import env
-import numpy as np
 from concurrent import futures
 import grpc
 import embeddingservice_pb2
 import embeddingservice_pb2_grpc
+import weaviate
+from weaviate.client import WeaviateClient
 
+def get_weaviate_client_custom(env) -> WeaviateClient:
+    headers = None
+    if env.WEAVIATE_TOKEN:
+        headers = {"Authorization": f"Bearer {env.WEAVIATE_TOKEN}"}
+    
+    client = weaviate.connect_to_custom(
+        http_host=env.WEAVIATE_HTTP_HOST,
+        http_port=env.WEAVIATE_HTTP_PORT,
+        http_secure=env.WEAVIATE_HTTP_SECURE,
+        grpc_host=env.WEAVIATE_GRPC_HOST,
+        grpc_port=env.WEAVIATE_GRPC_PORT,
+        grpc_secure=env.WEAVIATE_GRPC_SECURE,
+        headers=headers,
+    )
+    assert client.is_live() == True
+    assert client.is_ready() == True
+    return client
 
 class EmbeddingServiceServicer(embeddingservice_pb2_grpc.EmbeddingServiceServicer):
     def TextEmbedding(self, request, context):
@@ -36,15 +54,28 @@ class EmbeddingServiceServicer(embeddingservice_pb2_grpc.EmbeddingServiceService
             model=env.EMBEDDING_MODEL_UID,
         )
         text_vector = vectorizer.vectorize(request.text)
-        Vdb = WeaviateVdb_Insert()
+
+        client=get_weaviate_client_custom(env)
+        Vdb=WeaviateVdbInsert(client)
+
         uuid = Vdb.insert_data(
-            request.context_name, request.chunk_name, request.text, text_vector
+            request.context_name,
+            request.context_id,
+            request.chunk_name,
+            request.chunk_id,
+            request.text,
+            request.open_url,
+            text_vector,
         )
+
+        client.close()
+        
         if uuid:
             response = embeddingservice_pb2.Chunk2VdbResponse(reponse=True)
         else:
             response = embeddingservice_pb2.Chunk2VdbResponse(reponse=False)
         return response
+
 
 
 def serve():

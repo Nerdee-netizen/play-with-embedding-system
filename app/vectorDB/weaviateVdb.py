@@ -4,75 +4,62 @@ from app.embedding.vectorizer import OpenAIVectorizer
 from app.utils.config import env
 from abc import ABC, abstractmethod
 
-class VectrorDatabase_Insert(ABC):
+
+class VectrorDatabaseInsert(ABC):
 
     @abstractmethod
     def insert_data(self):
         pass
 
 
-class WeaviateVdb_Insert(VectrorDatabase_Insert):
-    def __init__(
-        self,
-        http_host="weaviate",
-        http_port=8080,
-        http_secure=False,
-        grpc_host="weaviate",
-        grpc_port=50051,
-        grpc_secure=False,
+class WeaviateVdbInsert(VectrorDatabaseInsert):
+    def __init__(self, client: weaviate.client.Client):
+        self.client = client
+
+    def connect_to_table(
+        self, table_name="ChunkEmbedding"
     ):
-        self.http_host = http_host
-        self.http_port = http_port
-        self.http_secure = http_secure
-        self.grpc_host = grpc_host
-        self.grpc_port = grpc_port
-        self.grpc_secure = grpc_secure
-
-
-    def connect_to_db(self):
-        client = weaviate.connect_to_custom(
-            http_host=self.http_host,
-            http_port=self.http_port,
-            http_secure=self.http_secure,
-            grpc_host=self.grpc_host,
-            grpc_port=self.grpc_port,
-            grpc_secure=self.grpc_secure,
-        )
-
-        return client
-    
-    def connect_to_table(self, client: weaviate.client.Client, table_name="ChunkEmbedding"):
-        if not client.collections.exists(table_name):
-            table_handle = client.collections.create(
+        if not self.client.collections.exists(table_name):
+            table_handle = self.client.collections.create(
                 table_name,
                 vectorizer_config=[
                     # Set a named vector
-                    Configure.NamedVectors.none(  # Use the "text2vec-cohere" vectorizer
-                        name="text_vector"  # Set the source property(ies)
-                    )
+                    Configure.NamedVectors.none(name="text_vector")
                 ],
                 properties=[  # Define properties
                     Property(name="context_name", data_type=DataType.TEXT),
+                    Property(name="context_id", data_type=DataType.TEXT),
                     Property(name="chunk_name", data_type=DataType.TEXT),
+                    Property(name="chunk_id", data_type=DataType.TEXT),
                     Property(name="text", data_type=DataType.TEXT),
+                    Property(name="open_url", data_type=DataType.TEXT),
                 ],
             )
         else:
             table_handle = client.collections.get(table_name)
 
         return table_handle
-    
-    def insert_data(self, context_name, chunk_name, text, text_vector):
 
-        client = self.connect_to_db()
-
-        table_handle=self.connect_to_table(client)
+    def insert_data(
+        self,
+        context_name: str,
+        context_id: str,
+        chunk_name: str,
+        chunk_id: str,
+        text: str,
+        open_url: str,
+        text_vector, # np.ndarray
+    ):  
+        table_handle = self.connect_to_table()
 
         uuid = table_handle.data.insert(
             properties={
                 "context_name": context_name,
+                "context_id": context_id,
                 "chunk_name": chunk_name,
+                "chunk_id": chunk_id,
                 "text": text,
+                "open_url": open_url,
             },
             vector={
                 "text_vector": text_vector,
@@ -85,21 +72,29 @@ class WeaviateVdb_Insert(VectrorDatabase_Insert):
 
 if __name__ == "__main__":
     context_name = "A delicious Riesling"
+    context_id = "Germany"
     chunk_name = "This wine is a delicious Riesling which pairs well with seafood."
+    chunk_id = "Riesling"
     text = "Germany"
+    open_url = "https://en.wikipedia.org/wiki/Germany"
 
-    vectorizer = OpenAIVectorizer(base_url=env.EMBEDDING_ENDPOINT,
+    vectorizer = OpenAIVectorizer(
+        base_url=env.EMBEDDING_ENDPOINT,
         api_key="speak and see it done",
-         model=env.EMBEDDING_MODEL_UID,
-     )
+        model=env.EMBEDDING_MODEL_UID,
+    )
     text_vector = vectorizer.vectorize(text)
 
-    Vdb=WeaviateVdb_Insert()
-    
-    uuid=Vdb.insert_data(context_name, chunk_name, text, text_vector)
-    print(uuid)
-    
     client=weaviate.connect_to_local("weaviate")
+    Vdb = WeaviateVdbInsert(client)
+
+    uuid = Vdb.insert_data(
+        context_name, context_id, chunk_name, chunk_id, text, open_url, text_vector
+    )
+    print(uuid)
+    client.close()
+    
+    client = weaviate.connect_to_local("weaviate")
     ChunkEmbedding = client.collections.get("ChunkEmbedding")
 
     for item in ChunkEmbedding.iterator(

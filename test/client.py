@@ -23,6 +23,7 @@ def run():
             chunk_id="chunk_id",
             text="",
             open_url="",
+            table_name="ABC",
         )
         Chunk2Vdb_response = stub.Chunk2Vdb(Chunk2Vdb_request)
         print(f"{Chunk2Vdb_response.reponse}")

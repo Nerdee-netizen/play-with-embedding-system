@@ -58,7 +58,7 @@ class EmbeddingServiceServicer(embeddingservice_pb2_grpc.EmbeddingServiceService
         text_vector = vectorizer.vectorize(request.text)
 
         client = get_weaviate_client_custom(env)
-        Vdb = WeaviateVdbInsert(client)
+        Vdb = WeaviateVdbInsert(client, request.table_name)
 
         uuid = Vdb.insert_data(
             context_name=request.context_name,

@@ -15,13 +15,14 @@ class VectrorDatabaseInsert(ABC):
 
 class WeaviateVdbInsert(VectrorDatabaseInsert):
 
-    def __init__(self, client: WeaviateClient):
+    def __init__(self, client: WeaviateClient, table_name="ChunkEmbedding"):
         self.client = client
+        self.table_name = table_name
 
-    def connect_to_table(self, table_name="ChunkEmbedding"):
-        if not self.client.collections.exists(table_name):
+    def connect_to_table(self):
+        if not self.client.collections.exists(self.table_name):
             table_handle = self.client.collections.create(
-                table_name,
+                self.table_name,
                 vectorizer_config=[
                     # Set a named vector
                     Configure.NamedVectors.none(name="text_vector")
@@ -36,7 +37,7 @@ class WeaviateVdbInsert(VectrorDatabaseInsert):
                 ],
             )
         else:
-            table_handle = self.client.collections.get(table_name)
+            table_handle = self.client.collections.get(self.table_name)
 
         return table_handle
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     text_vector = vectorizer.vectorize(text)
 
     client = weaviate.connect_to_local("weaviate")
-    Vdb = WeaviateVdbInsert(client)
+    Vdb = WeaviateVdbInsert(client, "ChunkEmbedding")
 
     uuid = Vdb.insert_data(
         context_name, context_id, chunk_name, chunk_id, text, open_url, text_vector

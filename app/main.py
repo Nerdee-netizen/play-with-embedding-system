@@ -8,11 +8,12 @@ import embeddingservice_pb2_grpc
 import weaviate
 from weaviate.client import WeaviateClient
 
+
 def get_weaviate_client_custom(env) -> WeaviateClient:
     headers = None
     if env.WEAVIATE_TOKEN:
         headers = {"Authorization": f"Bearer {env.WEAVIATE_TOKEN}"}
-    
+
     client = weaviate.connect_to_custom(
         http_host=env.WEAVIATE_HTTP_HOST,
         http_port=env.WEAVIATE_HTTP_PORT,
@@ -25,6 +26,7 @@ def get_weaviate_client_custom(env) -> WeaviateClient:
     assert client.is_live() == True
     assert client.is_ready() == True
     return client
+
 
 class EmbeddingServiceServicer(embeddingservice_pb2_grpc.EmbeddingServiceServicer):
     def TextEmbedding(self, request, context):
@@ -55,27 +57,26 @@ class EmbeddingServiceServicer(embeddingservice_pb2_grpc.EmbeddingServiceService
         )
         text_vector = vectorizer.vectorize(request.text)
 
-        client=get_weaviate_client_custom(env)
-        Vdb=WeaviateVdbInsert(client)
+        client = get_weaviate_client_custom(env)
+        Vdb = WeaviateVdbInsert(client)
 
         uuid = Vdb.insert_data(
-            request.context_name,
-            request.context_id,
-            request.chunk_name,
-            request.chunk_id,
-            request.text,
-            request.open_url,
-            text_vector,
+            context_name=request.context_name,
+            context_id=request.context_id,
+            chunk_name=request.chunk_name,
+            chunk_id=request.chunk_id,
+            text=request.text,
+            open_url=request.open_url,
+            text_vector=text_vector,
         )
 
         client.close()
-        
+
         if uuid:
             response = embeddingservice_pb2.Chunk2VdbResponse(reponse=True)
         else:
             response = embeddingservice_pb2.Chunk2VdbResponse(reponse=False)
         return response
-
 
 
 def serve():

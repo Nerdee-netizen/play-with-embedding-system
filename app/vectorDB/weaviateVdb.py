@@ -1,5 +1,6 @@
 import weaviate
 from weaviate.classes.config import Configure, Property, DataType
+from weaviate.client import WeaviateClient
 from app.embedding.vectorizer import OpenAIVectorizer
 from app.utils.config import env
 from abc import ABC, abstractmethod
@@ -13,12 +14,11 @@ class VectrorDatabaseInsert(ABC):
 
 
 class WeaviateVdbInsert(VectrorDatabaseInsert):
-    def __init__(self, client: weaviate.client.Client):
+
+    def __init__(self, client: WeaviateClient):
         self.client = client
 
-    def connect_to_table(
-        self, table_name="ChunkEmbedding"
-    ):
+    def connect_to_table(self, table_name="ChunkEmbedding"):
         if not self.client.collections.exists(table_name):
             table_handle = self.client.collections.create(
                 table_name,
@@ -36,7 +36,7 @@ class WeaviateVdbInsert(VectrorDatabaseInsert):
                 ],
             )
         else:
-            table_handle = client.collections.get(table_name)
+            table_handle = self.client.collections.get(table_name)
 
         return table_handle
 
@@ -48,10 +48,10 @@ class WeaviateVdbInsert(VectrorDatabaseInsert):
         chunk_id: str,
         text: str,
         open_url: str,
-        text_vector, # np.ndarray
-    ):  
-        table_handle = self.connect_to_table()
+        text_vector,  # np.ndarray
+    ):
 
+        table_handle = self.connect_to_table()
         uuid = table_handle.data.insert(
             properties={
                 "context_name": context_name,
@@ -65,8 +65,7 @@ class WeaviateVdbInsert(VectrorDatabaseInsert):
                 "text_vector": text_vector,
             },
         )
-
-        client.close()
+        self.client.close()
         return uuid
 
 
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     )
     text_vector = vectorizer.vectorize(text)
 
-    client=weaviate.connect_to_local("weaviate")
+    client = weaviate.connect_to_local("weaviate")
     Vdb = WeaviateVdbInsert(client)
 
     uuid = Vdb.insert_data(
@@ -93,7 +92,7 @@ if __name__ == "__main__":
     )
     print(uuid)
     client.close()
-    
+
     client = weaviate.connect_to_local("weaviate")
     ChunkEmbedding = client.collections.get("ChunkEmbedding")
 

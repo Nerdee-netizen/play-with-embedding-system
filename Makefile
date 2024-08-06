@@ -3,3 +3,6 @@ up:
 
 client:
 	python test/client.py
+
+format:
+	black app/*.py
